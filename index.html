@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Inbox View Search</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+    function createCSVFile(data) {
+        const keys = Object.keys(data[0]);
+
+      const commaSeparatedString = [keys.join(",") , data.map(row => keys.map(key => row[key]).join(",")).join("\n")].join("\n");
+
+      const csvBlob = new Blob([commaSeparatedString]);
+
+      const a2 = document.getElementById("a2");
+
+      a2.href = URL.createObjectURL(csvBlob);
+
+      jQuery('#downloadHider').addClass('downloadShow').removeClass('downloadHidden');
+    }
+    </script>
+  </head>
+  <body>
+    <h1 class="center-text">mPloy Inbox View Search</h1><hr><br>
+        <div class="center-text">
+            <form action="return false" method="post">
+              <div class="center-element">
+                <label for="password" class="minor-padding"><b>Password</b></label>
+                <input type="password" name="password" id="password" required>
+              </div><hr>
+            </form>
+        </div>
+        <div class="center-text button">
+          <button type="submit" id="search">Download Inbox Data</button>
+        </div>
+        <div id="downloadHider" class="downloadHidden center-text padding">
+          <a id="a2" download="Message_Database.csv">Download CSV File</a>
+        </div>
+    <script>
+    const button = document.getElementById("search");
+    const query = async () => {
+      const obj = {
+        password: document.getElementById("password").value,
+      }
+
+      await fetch('https://employment-dev.mploy.cloud/inbox/inboxQuery', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(obj),
+      })
+      .then((response) => response.text())
+      .then((returnedData) => {
+        const jsonData = JSON.parse(returnedData);
+        //User Authentication Error
+        if(jsonData.statusCode === 401){
+          alert(jsonData.string);
+          return 401;
+        }
+
+        const newData = jsonData.data.map(message => {
+          const newMessage = {
+            id: message.id,
+            sentOn: message.sentOn,
+            title: message.title,
+            url: message.url,
+            viewCount: message.viewCount,
+          }
+          return newMessage;
+        })
+        console.log(newData);
+        createCSVFile(newData);
+      })
+      .catch(error => {
+        console.log(error);
+        return error;
+      });
+    }
+      button.onclick = query;
+    </script>
+  </body>
+</html>
